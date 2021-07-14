@@ -1,6 +1,6 @@
 {
     "name": "splashsky/simplerouter-php",
-    "description": "A very light, easy-to-use router for PHP apps.",
+    "description": "A very light, easy-to-use router for small PHP apps.",
     "type": "library",
     "license": "MIT",
     "authors": [
