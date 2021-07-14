@@ -1,10 +1,10 @@
 DirectoryIndex index.php
 
-# enable apache rewrite engine
+# Enable Apache rewrite engine
 RewriteEngine on
 
-# set your rewrite base
-# Edit this in your init method too if you script lives in a subfolder
+# Set the rewrite base path
+# Pass this to the run() method too, if your entry point is in a subfolder
 RewriteBase /
 
 # Deliver the folder or file directly if it exists on the server

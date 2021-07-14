@@ -1,9 +1,14 @@
 {
-    "name": "steampixel/simple-php-router",
-    "description": "This is a simple and small PHP router that can handel the whole url routing for your project.",
+    "name": "splashsky/simplerouter-php",
+    "description": "A very light, easy-to-use router for PHP apps.",
     "type": "library",
     "license": "MIT",
     "authors": [
+        {
+            "name": "@Splashsky",
+            "email": "sky@surf.gg",
+            "homepage": "https://surf.gg"
+        },
         {
             "name": "Christoph Stitz",
             "email": "info@steampixel.de",
@@ -18,8 +23,8 @@
     "minimum-stability": "dev",
     "require": {},
     "autoload": {
-      "psr-0": {
-          "Steampixel": "src/"
-      }
-  }
+        "psr-4": {
+            "Splashsky\\": "src/"
+        }
+    }
 }

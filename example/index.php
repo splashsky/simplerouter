@@ -1,17 +1,10 @@
 <?php
 
-// Use this namespace
-use Steampixel\Route;
+use Splashsky\SimpleRouter;
 
-// Include router class
-include 'src/Steampixel/Route.php';
+include '../src/Splashsky/Router.php';
 
-// Define a global basepath
-define('BASEPATH','/');
-
-// If your script lives in a subfolder you can use the following example
-// Do not forget to edit the basepath in .htaccess if you are on apache
-// define('BASEPATH','/api/v1');
+define('BASEPATH', '/');
 
 function navi() {
   echo '
