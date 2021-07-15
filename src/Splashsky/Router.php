@@ -12,9 +12,11 @@ class Router
 
     /**
      * A quick static function to register a route in the router. Used by the shorthand methods as well.
+     * 
      * @param string $route The path to be used as the route.
      * @param callable|string $action Either a callable to be executed, or a string reference to a method.
      * @param string|array $methods The HTTP verb(s) this route accepts.
+     * @return Router
      */
     public static function add(string $route, callable|string $action, string|array $methods = 'GET')
     {
@@ -50,6 +52,17 @@ class Router
     public static function methodNotAllowed(callable $action)
     {
         self::$methodNotAllowed = $action;
+    }
+
+    /**
+     * Redefine the default constraint for route parameters. Default is '([\w\-]+)'
+     *
+     * @param string $constraint The RegEx you want parameters to adhere to by default. Defaults to '([\w\-]+)'
+     * @return void
+     */
+    public static function setDefaultConstraint(string $constraint = '([\w\-]+)')
+    {
+        self::$defaultConstraint = $constraint;
     }
 
     public static function with(string|array $parameter, string $constraint = '')
