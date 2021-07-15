@@ -8,23 +8,23 @@ class Router
     private static $pathNotFound;
     private static $methodNotAllowed;
 
-    public static function add(string $route, callable $callback, string $method = 'get')
+    public static function add(string $route, callable $action, string $method = 'get')
     {
         self::$routes[] = [
             'route' => $route,
-            'callback' => $callback,
+            'action' => $action,
             'method' => $method
         ];
     }
 
-    public static function get(string $route, callable $callback)
+    public static function get(string $route, callable $action)
     {
-        self::add($route, $callback, 'get');
+        self::add($route, $action, 'get');
     }
 
-    public static function post(string $route, callable $callback)
+    public static function post(string $route, callable $action)
     {
-        self::add($route, $callback, 'post');
+        self::add($route, $action, 'post');
     }
 
     public static function getAllRoutes()
@@ -32,14 +32,14 @@ class Router
         return self::$routes;
     }
 
-    public static function pathNotFound(callable $callback)
+    public static function pathNotFound(callable $action)
     {
-        self::$pathNotFound = $callback;
+        self::$pathNotFound = $action;
     }
 
-    public static function methodNotAllowed(callable $callback)
+    public static function methodNotAllowed(callable $action)
     {
-        self::$methodNotAllowed = $callback;
+        self::$methodNotAllowed = $action;
     }
 
     public static function run(string $basePath = '', bool $caseMatters = false, bool $trailingSlashMatters = false, bool $multimatch = false)
@@ -73,6 +73,8 @@ class Router
         
             // Add string start and end automatically
             $route['route'] = '^'.$route['route'].'$';
+
+            die('#'.$route['route'].'#'.($caseMatters ? '' : 'i').'u');
         
             // Check path match
             if (preg_match('#'.$route['route'].'#'.($caseMatters ? '' : 'i').'u', $path, $matches)) {
@@ -88,7 +90,7 @@ class Router
                             array_shift($matches); // Remove basepath
                         }
             
-                        if ($return = call_user_func_array($route['callback'], $matches)) {
+                        if ($return = call_user_func_array($route['action'], $matches)) {
                             echo $return;
                         }
             
