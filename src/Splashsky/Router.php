@@ -153,8 +153,8 @@ class Router
     public static function run(string $basePath = '', bool $multimatch = false)
     {
         $basePath = rtrim($basePath, '/');
-        $uri = parse_url($_SERVER['REQUEST_URI'])['path'];
         $method = $_SERVER['REQUEST_METHOD'];
+        $uri = parse_url($_SERVER['REQUEST_URI'])['path'];
         $path = urldecode(rtrim($uri, '/'));
 
         // If the path is empty (no slash in URI) place one to satisfy the root route ('/')
