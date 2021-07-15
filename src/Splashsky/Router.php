@@ -12,14 +12,14 @@ class Router
      * A quick static function to register a route in the router. Used by the shorthand methods as well.
      * @param string $route The path to be used as the route.
      * @param callable|string $action Either a callable to be executed, or a string reference to a method.
-     * @param string $method The HTTP verb this route services.
+     * @param string|array $methods The HTTP verb(s) this route accepts.
      */
-    public static function add(string $route, callable|string $action, string $method = 'GET')
+    public static function add(string $route, callable|string $action, string|array $methods = 'GET')
     {
         self::$routes[] = [
             'route' => $route,
             'action' => $action,
-            'method' => $method
+            'methods' => $methods
         ];
     }
 
@@ -48,54 +48,59 @@ class Router
         self::$methodNotAllowed = $action;
     }
 
-    public static function run(string $basePath = '', bool $caseMatters = false, bool $multimatch = false)
+    private static function tokenize(string $uri)
+    {
+        return preg_replace('/(?:{([A-Za-z]+)})+/', '([\w]+)', $uri);
+    }
+
+    public static function run(string $basePath = '', bool $multimatch = false)
     {
         $basePath = rtrim($basePath, '/');
-        $path = rtrim(parse_url($_SERVER['REQUEST_URI']), '/');
+        $uri = parse_url($_SERVER['REQUEST_URI'])['path'];
         $method = $_SERVER['REQUEST_METHOD'];
+        $path = urldecode(rtrim($uri, '/'));
 
-        $path = urldecode($path);
+        // If the path is empty (no slash in URI) place one to satisfy the root route ('/')
+        if (empty($path)) {
+            $path = '/';
+        }
 
         $pathMatchFound = false;
         $routeMatchFound = false;
 
+        // Begin looking through routes
         foreach (self::$routes as $route) {
             if ($basePath != '' && $basePath != '/') {
-                $route['route'] = '('.$basePath.')'.$route['route'];
+                $route['route'] = $basePath.$route['route'];
             }
         
-            // Add string start and end automatically
-            $route['route'] = '^'.$route['route'].'$';
+            // Prepare route by tokenizing.
+            $tokenized = '#^'.self::tokenize($route['route']).'$#u';
 
-            die('#'.$route['route'].'#'.($caseMatters ? '' : 'i').'u');
-        
-            // Check path match
-            if (preg_match('#'.$route['route'].'#'.($caseMatters ? '' : 'i').'u', $path, $matches)) {
+            // If the tokenized route matches the current path...
+            if (preg_match($tokenized, $path, $matches)) {
                 $pathMatchFound = true;
         
-                // Cast allowed method to array if it's not one already, then run through all methods
-                foreach ((array) $route['method'] as $allowedMethod) {
-                    // Check method match
+                // Run through the route's accepted method(s)
+                foreach ((array) $route['methods'] as $allowedMethod) {
+                    // See if the current request method matches
                     if (strtolower($method) == strtolower($allowedMethod)) {
-                        array_shift($matches); // Always remove first element. This contains the whole string
+                        array_shift($matches); // Remove the first match - always contains the full url
             
-                        if ($basePath != '' && $basePath != '/') {
-                            array_shift($matches); // Remove basepath
-                        }
-            
+                        // If we're successful at calling the route's action, echo the result
                         if ($return = call_user_func_array($route['action'], $matches)) {
                             echo $return;
                         }
             
                         $routeMatchFound = true;
             
-                        // Do not check other routes
+                        // Do not check other routes.
                         break;
                     }
                 }
             }
 
-            // Break the loop if the first found route is a match
+            // Break the loop if the first found route is a match.
             if($routeMatchFound && !$multimatch) {
                 break;
             }
@@ -106,13 +111,15 @@ class Router
             // But a matching path exists
             if ($pathMatchFound) {
                 if (self::$methodNotAllowed) {
-                    die('Method not allowed');
-                    //call_user_func_array(self::$methodNotAllowed, Array($path, $method));
+                    call_user_func_array(self::$methodNotAllowed, Array($path, $method));
+                } else {
+                    die('405');
                 }
             } else {
                 if (self::$pathNotFound) {
-                    die('Path not found');
-                    //call_user_func_array(self::$pathNotFound, Array($path));
+                    call_user_func_array(self::$pathNotFound, Array($path));
+                } else {
+                    die('404');
                 }
             }
         }
