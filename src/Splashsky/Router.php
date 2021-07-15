@@ -29,26 +29,53 @@ class Router
         return new self;
     }
 
+    /**
+     * Shorthand function to define a GET route
+     *
+     * @param string $route
+     * @param callable $action
+     */
     public static function get(string $route, callable $action)
     {
         return self::add($route, $action, 'GET');
     }
 
+    /**
+     * Default function to define a POST route
+     *
+     * @param string $route
+     * @param callable $action
+     */
     public static function post(string $route, callable $action)
     {
         return self::add($route, $action, 'POST');
     }
 
+    /**
+     * Return all routes currently registered
+     *
+     * @return array
+     */
     public static function getAllRoutes()
     {
         return self::$routes;
     }
 
+    /**
+     * Defines an action to be called when a path isn't found - i.e. a 404
+     *
+     * @param callable $action
+     */
     public static function pathNotFound(callable $action)
     {
         self::$pathNotFound = $action;
     }
 
+    /**
+     * Defines an action to be called with a method isn't allowed on a route - i.e. a 405
+     *
+     * @param callable $action
+     */
     public static function methodNotAllowed(callable $action)
     {
         self::$methodNotAllowed = $action;
@@ -65,6 +92,16 @@ class Router
         self::$defaultConstraint = $constraint;
     }
 
+    /**
+     * Define a constraint for a route parameter. If only passing one parameter, 
+     * provide the parameter name as first argument and constraint as second. If 
+     * adding constraints for multiple parameters, pass an array of 'parameter' => 'constraint'
+     * pairs.
+     * 
+     * @param string|array $parameter
+     * @param string $constraint
+     * @return Router
+     */
     public static function with(string|array $parameter, string $constraint = '')
     {
         if (is_array($parameter)) {
@@ -80,6 +117,12 @@ class Router
         return new self;
     }
 
+    /**
+     * Tokenizes the given URI using our constraint rules and returns the tokenized URI
+     *
+     * @param string $uri
+     * @return string
+     */
     private static function tokenize(string $uri)
     {
         $constraints = array_keys(self::$constraints);
@@ -100,6 +143,13 @@ class Router
         return $uri;
     }
 
+    /**
+     * Runs the router. Accepts a base path from which to serve the routes, and optionally whether you want to try
+     * and match multiple routes.
+     *
+     * @param string $basePath
+     * @param boolean $multimatch
+     */
     public static function run(string $basePath = '', bool $multimatch = false)
     {
         $basePath = rtrim($basePath, '/');
