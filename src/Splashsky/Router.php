@@ -8,7 +8,13 @@ class Router
     private static $pathNotFound;
     private static $methodNotAllowed;
 
-    public static function add(string $route, callable $action, string $method = 'get')
+    /**
+     * A quick static function to register a route in the router. Used by the shorthand methods as well.
+     * @param string $route The path to be used as the route.
+     * @param callable|string $action Either a callable to be executed, or a string reference to a method.
+     * @param string $method The HTTP verb this route services.
+     */
+    public static function add(string $route, callable|string $action, string $method = 'GET')
     {
         self::$routes[] = [
             'route' => $route,
@@ -19,12 +25,12 @@ class Router
 
     public static function get(string $route, callable $action)
     {
-        self::add($route, $action, 'get');
+        self::add($route, $action, 'GET');
     }
 
     public static function post(string $route, callable $action)
     {
-        self::add($route, $action, 'post');
+        self::add($route, $action, 'POST');
     }
 
     public static function getAllRoutes()
@@ -42,24 +48,11 @@ class Router
         self::$methodNotAllowed = $action;
     }
 
-    public static function run(string $basePath = '', bool $caseMatters = false, bool $trailingSlashMatters = false, bool $multimatch = false)
+    public static function run(string $basePath = '', bool $caseMatters = false, bool $multimatch = false)
     {
         $basePath = rtrim($basePath, '/');
-        $url = parse_url($_SERVER['REQUEST_URI']);
-        $path = '/';
+        $path = rtrim(parse_url($_SERVER['REQUEST_URI']), '/');
         $method = $_SERVER['REQUEST_METHOD'];
-
-        if (isset($url['path'])) {
-            if ($trailingSlashMatters) {
-                $path = $url['path'];
-            } else {
-                if($basePath.'/' != $url['path']) {
-                    $path = rtrim($url['path'], '/');
-                } else {
-                    $path = $url['path'];
-                }
-            }
-        }
 
         $path = urldecode($path);
 
