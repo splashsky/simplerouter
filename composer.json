@@ -1,5 +1,5 @@
 {
-    "name": "splashsky/simplerouter-php",
+    "name": "splashsky/simplerouter",
     "description": "A very light, easy-to-use router for small PHP apps.",
     "type": "library",
     "license": "MIT",

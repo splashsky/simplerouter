@@ -1,4 +1,4 @@
-# SimpleRouter, PHP Edition
+# SimpleRouter
 
 Aloha! SimpleRouter is a super-small, lightweight, and easy-to-use router for your PHP project. It can handle any type of request, and features RegEx pattern matching for URI parameters. You can also easily define routes for 404 and 405 errors.
 
