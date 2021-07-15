@@ -5,8 +5,10 @@ namespace Splashsky;
 class Router
 {
     private static array $routes = [];
+    private static array $constraints = [];
     private static $pathNotFound;
     private static $methodNotAllowed;
+    private static string $defaultConstraint = '([\w\-]+)';
 
     /**
      * A quick static function to register a route in the router. Used by the shorthand methods as well.
@@ -21,16 +23,18 @@ class Router
             'action' => $action,
             'methods' => $methods
         ];
+
+        return new self;
     }
 
     public static function get(string $route, callable $action)
     {
-        self::add($route, $action, 'GET');
+        return self::add($route, $action, 'GET');
     }
 
     public static function post(string $route, callable $action)
     {
-        self::add($route, $action, 'POST');
+        return self::add($route, $action, 'POST');
     }
 
     public static function getAllRoutes()
@@ -48,9 +52,39 @@ class Router
         self::$methodNotAllowed = $action;
     }
 
+    public static function with(string|array $parameter, string $constraint = '')
+    {
+        if (is_array($parameter)) {
+            foreach ($parameter as $param => $constraint) {
+                self::$constraints[$param] = $constraint;
+            }
+
+            return new self;
+        }
+
+        self::$constraints[$parameter] = $constraint;
+
+        return new self;
+    }
+
     private static function tokenize(string $uri)
     {
-        return preg_replace('/(?:{([\w\-]+)})+/', '([\w\-]+)', $uri);
+        $constraints = array_keys(self::$constraints);
+
+        preg_match_all('/(?:{([\w\-]+)})+/', $uri, $matches);
+        $matches = $matches[1];
+
+        foreach ($matches as $match) {
+            $pattern = "/(?:{".$match."})+/";
+
+            if (in_array($match, $constraints)) {
+                $uri = preg_replace($pattern, '('.self::$constraints[$match].')', $uri);
+            } else {
+                $uri = preg_replace($pattern, self::$defaultConstraint, $uri);
+            }
+        }
+
+        return $uri;
     }
 
     public static function run(string $basePath = '', bool $multimatch = false)
