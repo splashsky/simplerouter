@@ -50,7 +50,7 @@ class Router
 
     private static function tokenize(string $uri)
     {
-        return preg_replace('/(?:{([A-Za-z]+)})+/', '([\w]+)', $uri);
+        return preg_replace('/(?:{([\w\-]+)})+/', '([\w\-]+)', $uri);
     }
 
     public static function run(string $basePath = '', bool $multimatch = false)
