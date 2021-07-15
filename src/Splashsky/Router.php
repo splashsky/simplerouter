@@ -5,14 +5,18 @@ namespace Splashsky;
 class Router
 {
     private static array $routes = [];
+    private static array $constraints = [];
     private static $pathNotFound;
     private static $methodNotAllowed;
+    private static string $defaultConstraint = '([\w\-]+)';
 
     /**
      * A quick static function to register a route in the router. Used by the shorthand methods as well.
+     * 
      * @param string $route The path to be used as the route.
      * @param callable|string $action Either a callable to be executed, or a string reference to a method.
      * @param string|array $methods The HTTP verb(s) this route accepts.
+     * @return Router
      */
     public static function add(string $route, callable|string $action, string|array $methods = 'GET')
     {
@@ -21,43 +25,136 @@ class Router
             'action' => $action,
             'methods' => $methods
         ];
+
+        return new self;
     }
 
+    /**
+     * Shorthand function to define a GET route
+     *
+     * @param string $route
+     * @param callable $action
+     */
     public static function get(string $route, callable $action)
     {
-        self::add($route, $action, 'GET');
+        return self::add($route, $action, 'GET');
     }
 
+    /**
+     * Default function to define a POST route
+     *
+     * @param string $route
+     * @param callable $action
+     */
     public static function post(string $route, callable $action)
     {
-        self::add($route, $action, 'POST');
+        return self::add($route, $action, 'POST');
     }
 
+    /**
+     * Return all routes currently registered
+     *
+     * @return array
+     */
     public static function getAllRoutes()
     {
         return self::$routes;
     }
 
+    /**
+     * Defines an action to be called when a path isn't found - i.e. a 404
+     *
+     * @param callable $action
+     */
     public static function pathNotFound(callable $action)
     {
         self::$pathNotFound = $action;
     }
 
+    /**
+     * Defines an action to be called with a method isn't allowed on a route - i.e. a 405
+     *
+     * @param callable $action
+     */
     public static function methodNotAllowed(callable $action)
     {
         self::$methodNotAllowed = $action;
     }
 
-    private static function tokenize(string $uri)
+    /**
+     * Redefine the default constraint for route parameters. Default is '([\w\-]+)'
+     *
+     * @param string $constraint The RegEx you want parameters to adhere to by default. Defaults to '([\w\-]+)'
+     * @return void
+     */
+    public static function setDefaultConstraint(string $constraint = '([\w\-]+)')
     {
-        return preg_replace('/(?:{([A-Za-z]+)})+/', '([\w]+)', $uri);
+        self::$defaultConstraint = $constraint;
     }
 
+    /**
+     * Define a constraint for a route parameter. If only passing one parameter, 
+     * provide the parameter name as first argument and constraint as second. If 
+     * adding constraints for multiple parameters, pass an array of 'parameter' => 'constraint'
+     * pairs.
+     * 
+     * @param string|array $parameter
+     * @param string $constraint
+     * @return Router
+     */
+    public static function with(string|array $parameter, string $constraint = '')
+    {
+        if (is_array($parameter)) {
+            foreach ($parameter as $param => $constraint) {
+                self::$constraints[$param] = $constraint;
+            }
+
+            return new self;
+        }
+
+        self::$constraints[$parameter] = $constraint;
+
+        return new self;
+    }
+
+    /**
+     * Tokenizes the given URI using our constraint rules and returns the tokenized URI
+     *
+     * @param string $uri
+     * @return string
+     */
+    private static function tokenize(string $uri)
+    {
+        $constraints = array_keys(self::$constraints);
+
+        preg_match_all('/(?:{([\w\-]+)})+/', $uri, $matches);
+        $matches = $matches[1];
+
+        foreach ($matches as $match) {
+            $pattern = "/(?:{".$match."})+/";
+
+            if (in_array($match, $constraints)) {
+                $uri = preg_replace($pattern, '('.self::$constraints[$match].')', $uri);
+            } else {
+                $uri = preg_replace($pattern, self::$defaultConstraint, $uri);
+            }
+        }
+
+        return $uri;
+    }
+
+    /**
+     * Runs the router. Accepts a base path from which to serve the routes, and optionally whether you want to try
+     * and match multiple routes.
+     *
+     * @param string $basePath
+     * @param boolean $multimatch
+     */
     public static function run(string $basePath = '', bool $multimatch = false)
     {
         $basePath = rtrim($basePath, '/');
-        $uri = parse_url($_SERVER['REQUEST_URI'])['path'];
         $method = $_SERVER['REQUEST_METHOD'];
+        $uri = parse_url($_SERVER['REQUEST_URI'])['path'];
         $path = urldecode(rtrim($uri, '/'));
 
         // If the path is empty (no slash in URI) place one to satisfy the root route ('/')
