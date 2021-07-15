@@ -6,22 +6,20 @@ As this implementation is very simple, it works great as boilerplate for a more 
 
 ## Usage
 ```php
-// Either include the class...
+// Include the class... (this can also be done via autoloading)
 include 'src\Splashsky\Router.php';
 
-// Or use the namespace...
+// Use the namespace...
 use Splashsky\Router;
 
-// Add the first route
-Router::add('/user/([0-9]*)/edit', function($id) {
-    echo 'Edit user with id '.$id.'<br>';
-}, 'get');
+// Add the first GET route...
+Router::get('/user/{id}/edit', function ($id) {
+    return 'Edit user with id '.$id.'<br>';
+});
 
-// Run the router
-Router::run('/');
+// Run the router!
+Router::run();
 ```
-
-There are more complex examples in the `example` directory, in the `index.php` file.
 
 ## Installation
 
@@ -33,11 +31,23 @@ composer require splashsky/simplerouter-php
 
 Otherwise, download the latest Release and use `include` or `require` in your code.
 
+## Caveats
+
+Using SimpleRouter is... simple! There's a couple of principles to note, however.
+
+### Root Route
+
+You can't have an empty route (`Router::get('', ...);`), as the router **always assumes you at least have a `/` in your URI**. The root route should always be `/`, such as in `Router::get('/', function () {});`.
+
+### Parameters are in order they appear
+
+In the example of `/api/hello/{name}`, your first instinct when getting this parmeter in your action is that the variable will be named `$name`. This isn't the case - route parameters are in the order they are found in the route, and names are irrelevant.
+
 ## Routing for subfolders
 If you're wanting to route for seperate uses (such as an api), you can create another entrypoint (in `/api/v1` for example) and pass a custom base path to the router.
 
 ```php
-Route::run('/api/v1');
+Router::run('/api/v1');
 ```
 
 Ensure that your web server points traffic from `/api/v1` to this entrypoint appropriately.
