@@ -131,12 +131,12 @@ class Router
         $matches = $matches[1];
 
         foreach ($matches as $match) {
-            $pattern = "/(?:{".$match."})+/";
+            $pattern = '{'.$match.'}';
 
             if (in_array($match, $constraints)) {
-                $uri = preg_replace($pattern, '('.self::$constraints[$match].')', $uri);
+                $uri = str_replace($pattern, '('.self::$constraints[$match].')', $uri);
             } else {
-                $uri = preg_replace($pattern, self::$defaultConstraint, $uri);
+                $uri = str_replace($pattern, self::$defaultConstraint, $uri);
             }
         }
 
