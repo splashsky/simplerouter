@@ -5,11 +5,11 @@ namespace Splashsky;
 class Router
 {
     private static array $routes = [];
-    private static array $constraints = [];
     private static $pathNotFound;
     private static $methodNotAllowed;
     private static string $defaultConstraint = '([\w\-]+)';
     private static string $currentPrefix = '';
+    private static string $lastInsertedRoute = '';
 
     /**
      * A quick static function to register a route in the router. Used by the shorthand methods as well.
@@ -26,11 +26,16 @@ class Router
             $route = self::$currentPrefix.$route;
         }
 
-        self::$routes[] = [
-            'route' => self::trimRoute($route),
+        $trimmed = self::trimRoute($route);
+
+        self::$routes[$trimmed] = [
+            'route' => $trimmed,
             'action' => $action,
-            'methods' => $methods
+            'methods' => $methods,
+            'constraints' => []
         ];
+
+        self::$lastInsertedRoute = $trimmed;
 
         return new self;
     }
@@ -136,15 +141,17 @@ class Router
      */
     public static function with(string|array $parameter, string $constraint = '')
     {
+        $last = self::$lastInsertedRoute;
+
         if (is_array($parameter)) {
             foreach ($parameter as $param => $constraint) {
-                self::$constraints[$param] = $constraint;
+                self::$routes[$last]['constraints'][$param] = $constraint;
             }
 
             return new self;
         }
 
-        self::$constraints[$parameter] = $constraint;
+        self::$routes[$last]['constraints'][$parameter] = $constraint;
 
         return new self;
     }
@@ -157,7 +164,8 @@ class Router
      */
     private static function tokenize(string $uri)
     {
-        $constraints = array_keys(self::$constraints);
+        $constraints = self::$routes[$uri]['constraints'];
+        $constraintKeys = array_keys($constraints);
 
         preg_match_all('/(?:{([\w\-]+)})+/', $uri, $matches);
         $matches = $matches[1];
@@ -165,9 +173,9 @@ class Router
         foreach ($matches as $match) {
             $pattern = '{'.$match.'}';
 
-            if (in_array($match, $constraints)) {
+            if (in_array($match, $constraintKeys)) {
                 // Do some voodoo to allow users to use parentheses in their constraints if they want
-                $constraint = '('.rtrim(ltrim(trim(self::$constraints[$match]), '('), ')').')';
+                $constraint = '('.rtrim(ltrim(trim($constraints[$match]), '('), ')').')';
 
                 $uri = str_replace($pattern, $constraint, $uri);
             } else {
