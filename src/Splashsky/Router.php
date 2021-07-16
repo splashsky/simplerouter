@@ -27,7 +27,7 @@ class Router
         }
 
         self::$routes[] = [
-            'route' => $route,
+            'route' => self::trimRoute($route),
             'action' => $action,
             'methods' => $methods
         ];
@@ -100,6 +100,12 @@ class Router
     public static function setDefaultConstraint(string $constraint = '([\w\-]+)')
     {
         self::$defaultConstraint = $constraint;
+    }
+
+    private static function trimRoute(string $route): string
+    {
+        $route = trim(trim($route), '/');
+        return "/$route";
     }
 
     /**
@@ -182,12 +188,7 @@ class Router
         $basePath = rtrim($basePath, '/');
         $method = $_SERVER['REQUEST_METHOD'];
         $uri = parse_url($_SERVER['REQUEST_URI'])['path'];
-        $path = urldecode(rtrim($uri, '/'));
-
-        // If the path is empty (no slash in URI) place one to satisfy the root route ('/')
-        if (empty($path)) {
-            $path = '/';
-        }
+        $path = urldecode(self::trimRoute($uri));
 
         $pathMatchFound = false;
         $routeMatchFound = false;
