@@ -9,6 +9,7 @@ class Router
     private static $pathNotFound;
     private static $methodNotAllowed;
     private static string $defaultConstraint = '([\w\-]+)';
+    private static string $currentPrefix = '';
 
     /**
      * A quick static function to register a route in the router. Used by the shorthand methods as well.
@@ -20,8 +21,13 @@ class Router
      */
     public static function add(string $route, callable|string $action, string|array $methods = 'GET')
     {
+        // If a prefix exists, prepend it to the route
+        if (!empty(self::$currentPrefix)) {
+            $route = self::$currentPrefix.$route;
+        }
+
         self::$routes[] = [
-            'route' => $route,
+            'route' => self::trimRoute($route),
             'action' => $action,
             'methods' => $methods
         ];
@@ -34,6 +40,7 @@ class Router
      *
      * @param string $route
      * @param callable $action
+     * @return Router
      */
     public static function get(string $route, callable $action)
     {
@@ -45,6 +52,7 @@ class Router
      *
      * @param string $route
      * @param callable $action
+     * @return Router
      */
     public static function post(string $route, callable $action)
     {
@@ -65,6 +73,7 @@ class Router
      * Defines an action to be called when a path isn't found - i.e. a 404
      *
      * @param callable $action
+     * @return void
      */
     public static function pathNotFound(callable $action)
     {
@@ -75,6 +84,7 @@ class Router
      * Defines an action to be called with a method isn't allowed on a route - i.e. a 405
      *
      * @param callable $action
+     * @return void
      */
     public static function methodNotAllowed(callable $action)
     {
@@ -90,6 +100,28 @@ class Router
     public static function setDefaultConstraint(string $constraint = '([\w\-]+)')
     {
         self::$defaultConstraint = $constraint;
+    }
+
+    private static function trimRoute(string $route): string
+    {
+        $route = trim(trim($route), '/');
+        return "/$route";
+    }
+
+    /**
+     * Accepts a callable that defines routes, and adds a prefix to them.
+     *
+     * @param string $prefix The prefix you want added to the routes.
+     * @param callable $routes A function that defines routes.
+     * @return void
+     */
+    public static function prefix(string $prefix, callable $routes)
+    {
+        self::$currentPrefix = $prefix;
+
+        $routes();
+
+        self::$currentPrefix = '';
     }
 
     /**
@@ -134,7 +166,10 @@ class Router
             $pattern = '{'.$match.'}';
 
             if (in_array($match, $constraints)) {
-                $uri = str_replace($pattern, '('.self::$constraints[$match].')', $uri);
+                // Do some voodoo to allow users to use parentheses in their constraints if they want
+                $constraint = '('.rtrim(ltrim(trim(self::$constraints[$match]), '('), ')').')';
+
+                $uri = str_replace($pattern, $constraint, $uri);
             } else {
                 $uri = str_replace($pattern, self::$defaultConstraint, $uri);
             }
@@ -149,25 +184,22 @@ class Router
      *
      * @param string $basePath
      * @param boolean $multimatch
+     * @return void
      */
     public static function run(string $basePath = '', bool $multimatch = false)
     {
-        $basePath = rtrim($basePath, '/');
+        $basePath = self::trimRoute($basePath);
         $method = $_SERVER['REQUEST_METHOD'];
         $uri = parse_url($_SERVER['REQUEST_URI'])['path'];
-        $path = urldecode(rtrim($uri, '/'));
-
-        // If the path is empty (no slash in URI) place one to satisfy the root route ('/')
-        if (empty($path)) {
-            $path = '/';
-        }
+        $path = urldecode(self::trimRoute($uri));
 
         $pathMatchFound = false;
         $routeMatchFound = false;
 
         // Begin looking through routes
         foreach (self::$routes as $route) {
-            if ($basePath != '' && $basePath != '/') {
+            // If the basePath isn't just "root"
+            if ($basePath != '/') {
                 $route['route'] = $basePath.$route['route'];
             }
         
