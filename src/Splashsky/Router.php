@@ -34,6 +34,7 @@ class Router
      *
      * @param string $route
      * @param callable $action
+     * @return Router
      */
     public static function get(string $route, callable $action)
     {
@@ -45,6 +46,7 @@ class Router
      *
      * @param string $route
      * @param callable $action
+     * @return Router
      */
     public static function post(string $route, callable $action)
     {
@@ -65,6 +67,7 @@ class Router
      * Defines an action to be called when a path isn't found - i.e. a 404
      *
      * @param callable $action
+     * @return void
      */
     public static function pathNotFound(callable $action)
     {
@@ -75,6 +78,7 @@ class Router
      * Defines an action to be called with a method isn't allowed on a route - i.e. a 405
      *
      * @param callable $action
+     * @return void
      */
     public static function methodNotAllowed(callable $action)
     {
@@ -149,6 +153,7 @@ class Router
      *
      * @param string $basePath
      * @param boolean $multimatch
+     * @return void
      */
     public static function run(string $basePath = '', bool $multimatch = false)
     {
