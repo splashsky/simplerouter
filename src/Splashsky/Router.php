@@ -9,6 +9,7 @@ class Router
     private static $pathNotFound;
     private static $methodNotAllowed;
     private static string $defaultConstraint = '([\w\-]+)';
+    private static string $currentPrefix = '';
 
     /**
      * A quick static function to register a route in the router. Used by the shorthand methods as well.
@@ -20,6 +21,11 @@ class Router
      */
     public static function add(string $route, callable|string $action, string|array $methods = 'GET')
     {
+        // If a prefix exists, prepend it to the route
+        if (!empty(self::$currentPrefix)) {
+            $route = self::$currentPrefix.$route;
+        }
+
         self::$routes[] = [
             'route' => $route,
             'action' => $action,
@@ -94,6 +100,22 @@ class Router
     public static function setDefaultConstraint(string $constraint = '([\w\-]+)')
     {
         self::$defaultConstraint = $constraint;
+    }
+
+    /**
+     * Accepts a callable that defines routes, and adds a prefix to them.
+     *
+     * @param string $prefix The prefix you want added to the routes.
+     * @param callable $routes A function that defines routes.
+     * @return void
+     */
+    public static function prefix(string $prefix, callable $routes)
+    {
+        self::$currentPrefix = $prefix;
+
+        $routes();
+
+        self::$currentPrefix = '';
     }
 
     /**
