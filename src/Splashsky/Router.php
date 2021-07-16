@@ -188,7 +188,7 @@ class Router
      */
     public static function run(string $basePath = '', bool $multimatch = false)
     {
-        $basePath = rtrim($basePath, '/');
+        $basePath = self::trimRoute($basePath);
         $method = $_SERVER['REQUEST_METHOD'];
         $uri = parse_url($_SERVER['REQUEST_URI'])['path'];
         $path = urldecode(self::trimRoute($uri));
@@ -198,7 +198,8 @@ class Router
 
         // Begin looking through routes
         foreach (self::$routes as $route) {
-            if ($basePath != '' && $basePath != '/') {
+            // If the basePath isn't just "root"
+            if ($basePath != '/') {
                 $route['route'] = $basePath.$route['route'];
             }
         
