@@ -166,7 +166,10 @@ class Router
             $pattern = '{'.$match.'}';
 
             if (in_array($match, $constraints)) {
-                $uri = str_replace($pattern, '('.self::$constraints[$match].')', $uri);
+                // Do some voodoo to allow users to use parentheses in their constraints if they want
+                $constraint = '('.rtrim(ltrim(trim(self::$constraints[$match]), '('), ')').')';
+
+                $uri = str_replace($pattern, $constraint, $uri);
             } else {
                 $uri = str_replace($pattern, self::$defaultConstraint, $uri);
             }
