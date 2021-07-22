@@ -1,6 +1,6 @@
 <?php
 
-namespace Splashsky\SimpleRouter;
+namespace Splashsky;
 
 class Router
 {
