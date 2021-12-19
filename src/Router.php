@@ -162,9 +162,8 @@ class Router
      * @param string $uri
      * @return string
      */
-    private static function tokenize(string $uri)
+    private static function tokenize(string $uri, array $constraints)
     {
-        $constraints = self::$routes[$uri]['constraints'];
         $constraintKeys = array_keys($constraints);
 
         preg_match_all('/(?:{([\w\-]+)})+/', $uri, $matches);
@@ -208,11 +207,11 @@ class Router
         foreach (self::$routes as $route) {
             // If the basePath isn't just "root"
             if ($basePath != '/') {
-                $route['route'] = $basePath.$route['route'];
+                $route['route'] = self::trimRoute($basePath.$route['route']);
             }
         
             // Prepare route by tokenizing.
-            $tokenized = '#^'.self::tokenize($route['route']).'$#u';
+            $tokenized = '#^'.self::tokenize($route['route'], $route['constraints']).'$#u';
 
             // If the tokenized route matches the current path...
             if (preg_match($tokenized, $path, $matches)) {
