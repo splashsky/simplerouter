@@ -28,7 +28,7 @@ class Router
 
         $trimmed = self::trimRoute($route);
 
-        self::$routes[$trimmed] = [
+        self::$routes[] = [
             'route' => $trimmed,
             'action' => $action,
             'methods' => $methods,
