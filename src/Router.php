@@ -5,78 +5,79 @@ namespace Splashsky;
 class Router
 {
     private array $routes = [];
-    private $pathNotFound;
-    private $methodNotAllowed;
+    private $notFound;
     private string $defaultConstraint = '([\w\-]+)';
     private string $currentPrefix = '';
     private string $lastInsertedRoute = '';
 
-    public function __construct(private string $basePath = '')
+    /**
+     * Create an instance of a router. The provided basePath will be the / root of all routes.
+     */
+    public function __construct(private string $basePath = '') {}
+
+    /**
+     * Register a GET route.
+     */
+    public function get(string $route, callable $action): self
     {
-        // ...
+        $this->add($route, $action, 'GET');
+        return $this;
     }
 
     /**
-     * Shorthand function to define a GET route
-     *
-     * @param string $route
-     * @param callable $action
-     * @return Router
+     * Register a POST route.
      */
-    public function get(string $route, callable $action)
+    public function post(string $route, callable $action): self
     {
-        return $this->add($route, $action, 'GET');
+        $this->add($route, $action, 'POST');
+        return $this;
     }
 
     /**
-     * Default function to define a POST route
-     *
-     * @param string $route
-     * @param callable $action
-     * @return Router
+     * Register a PUT route.
      */
-    public function post(string $route, callable $action)
+    public function put(string $route, callable $action): self
     {
-        return $this->add($route, $action, 'POST');
+        $this->add($route, $action, 'PUT');
+        return $this;
     }
 
     /**
-     * Return all routes currently registered
-     *
-     * @return array
+     * Register a PATCH route.
      */
-    public function getAllRoutes()
+    public function patch(string $route, callable $action): self
+    {
+        $this->add($route, $action, 'PATCH');
+        return $this;
+    }
+
+    /**
+     * Register a DELETE route.
+     */
+    public function delete(string $route, callable $action): self
+    {
+        $this->add($route, $action, 'DELETE');
+        return $this;
+    }
+
+    /**
+     * Return the array of registered routes.
+     */
+    public function routes(): array
     {
         return $this->routes;
     }
 
     /**
-     * Defines an action to be called when a path isn't found - i.e. a 404
-     *
-     * @param callable $action
-     * @return void
+     * Set a callable for 404 responses.
      */
-    public function pathNotFound(callable $action)
+    public function setNotFound(callable $action)
     {
-        $this->pathNotFound = $action;
+        $this->notFound = $action;
     }
 
     /**
-     * Defines an action to be called with a method isn't allowed on a route - i.e. a 405
-     *
-     * @param callable $action
-     * @return void
-     */
-    public function methodNotAllowed(callable $action)
-    {
-        $this->methodNotAllowed = $action;
-    }
-
-    /**
-     * Redefine the default constraint for route parameters. Default is '([\w\-]+)'
-     *
-     * @param string $constraint The RegEx you want parameters to adhere to by default. Defaults to '([\w\-]+)'
-     * @return void
+     * Change the default constraint for URI parameters from ([\w\-]+)
      */
     public function setDefaultConstraint(string $constraint = '([\w\-]+)')
     {
@@ -90,18 +91,13 @@ class Router
     }
 
     /**
-     * Accepts a callable that defines routes, and adds a prefix to them.
-     *
-     * @param string $prefix The prefix you want added to the routes.
-     * @param callable $routes A function that defines routes.
-     * @return void
+     * Create a prefix group for routes. To use, pass a closure that can take one argument to $routes,
+     * and define routes in that closure as normal, using the argument as the router.
      */
     public function prefix(string $prefix, callable $routes)
     {
         $this->currentPrefix = $prefix;
-
-        $routes();
-
+        $routes($this);
         $this->currentPrefix = '';
     }
 
@@ -110,10 +106,6 @@ class Router
      * provide the parameter name as first argument and constraint as second. If 
      * adding constraints for multiple parameters, pass an array of 'parameter' => 'constraint'
      * pairs.
-     * 
-     * @param string|array $parameter
-     * @param string $constraint
-     * @return Router
      */
     public function with(string|array $parameter, string $constraint = ''): self
     {
@@ -134,22 +126,17 @@ class Router
     }
 
     /**
-     * Tokenizes the given URI using our constraint rules and returns the tokenized URI
-     *
-     * @param string $uri
-     * @return string
+     * Tokenizes a URI according to constraint rules. 
      */
-    private function tokenize(string $uri, array $constraints)
+    private function tokenize(string $uri, array $constraints = []): string
     {
-        $constraintKeys = array_keys($constraints);
-
         preg_match_all('/(?:{([\w\-]+)})+/', $uri, $matches);
         $matches = $matches[1];
 
         foreach ($matches as $match) {
             $pattern = '{'.$match.'}';
 
-            if (in_array($match, $constraintKeys)) {
+            if (in_array($match, array_keys($constraints))) {
                 // Do some voodoo to allow users to use parentheses in their constraints if they want
                 $constraint = '('.rtrim(ltrim(trim($constraints[$match]), '('), ')').')';
 
@@ -163,7 +150,7 @@ class Router
     }
 
     /**
-     * Add a route to the list of routes.
+     * Add a route to the list of registered routes.
      */
     public function add(string $route, callable|string $action, string $method = 'GET')
     {
@@ -179,12 +166,8 @@ class Router
     }
 
     /**
-     * Runs the router. Accepts a base path from which to serve the routes, and optionally whether you want to try
-     * and match multiple routes.
-     *
-     * @param string $basePath
-     * @param boolean $multimatch
-     * @return void
+     * Runs the router. Returns the results of the action of the route, if found. Executes
+     * the $notFound callable if there is one, or just dies with '404' if not.
      */
     public function run()
     {
@@ -196,14 +179,15 @@ class Router
             $tokenized = '#^'.$this->tokenize($this->trimRoute($basePath.$route), $opts['constraints']).'$#u';
 
             if (preg_match($tokenized, $path, $matches)) {
+                array_shift($matches);
                 if ($return = call_user_func_array($opts['action'], $matches)) {
                     return $return;
                 }
             }
         }
 
-        if ($this->pathNotFound) {
-            call_user_func_array($this->pathNotFound, [$path]);
+        if (is_callable($this->notFound)) {
+            return call_user_func_array($this->notFound, [$path]);
         } else {
             die('404');
         }
