@@ -1,3 +1,6 @@
+https://img.shields.io/badge/version-v3.0.0-blue?style=flat
+https://img.shields.io/badge/php-8.0%2B-blueviolet?style=flat
+
 # SimpleRouter
 
 Aloha! SimpleRouter is a super-small, lightweight, and easy-to-use router for your PHP project. It can handle any type of request, and features RegEx pattern matching for URI parameters. You can also easily define routes for 404 and 405 errors.
@@ -12,13 +15,33 @@ include 'src\Splashsky\Router.php';
 // Use the namespace...
 use Splashsky\Router;
 
-// Add the first GET route...
-Router::get('/user/{id}/edit', function ($id) {
-    return 'Edit user with id '.$id.'<br>';
+// Create an instance of the router...
+$router = new Router();
+
+// Add the first GET route, and limit the id parameter to numbers...
+$router->get('/user/{id}/edit', function($id) {
+    return 'Editing user with id '.$id;
+})->with('id', '[0-9]+');
+
+// Complementary POST route...
+$router->post('/user/{id}/edit', function($id) {
+    // do posty stuff
+    return 'Edited user id '.$id.' username changed to '.$_POST['username'];
 });
 
+// You can even make a prefix group...
+$router->prefix('foo', function($router) {
+    $router->get('', function() {
+        return 'Ya foo!';
+    });
+
+    $router->get('/bar', function($router) {
+        return 'Is a foobar';
+    });
+})
+
 // Run the router!
-Router::run();
+echo $router->run();
 ```
 
 ## Installation
@@ -33,24 +56,14 @@ Otherwise, download the latest Release and use `include` or `require` in your co
 
 ## Caveats
 
-Using SimpleRouter is... simple! There's a couple of principles to note, however.
+Using SimpleRouter is... simple! There will always be a caveat or two, though. Here's the current things to note. . .
 
-### Root Route
-
-You can't have an empty route (`Router::get('', ...);`), as the router **always assumes you at least have a `/` in your URI**. The root route should always be `/`, such as in `Router::get('/', function () {});`.
+### PHP Version 8.0+
+This project requires running PHP version 8.0+ due to the usage of new features to the language. I am thinking about making a PHP 7 compatible branch, though.
 
 ### Parameters are in order they appear
 
 In the example of `/api/hello/{name}`, your first instinct when getting this parmeter in your action is that the variable will be named `$name`. This isn't the case - route parameters are in the order they are found in the route, and names are irrelevant.
-
-## Routing for subfolders
-If you're wanting to route for seperate uses (such as an api), you can create another entrypoint (in `/api/v1` for example) and pass a custom base path to the router.
-
-```php
-Router::run('/api/v1');
-```
-
-Ensure that your web server points traffic from `/api/v1` to this entrypoint appropriately.
 
 ## Contributing
 
@@ -58,7 +71,7 @@ I'm happy to look over and review any Issues or Pull Requests for this project. 
 
 ## Credit
 
-Most of the code so far has been initially written by [@SteamPixel](https://github.com/steampixel), so make sure to give him a follow or a star on the original repo as well. Thanks!
+The original code had largely been initially written by [@SteamPixel](https://github.com/steampixel), so make sure to give him a follow or a star on the original repo as well. Further improvements to the router have been inspired by many projects, one of which being the [FOMO framework](https://github.com/fomo-framework/framework), which helped lay the groundwork for the v3 rework.
 
 ## License
 
